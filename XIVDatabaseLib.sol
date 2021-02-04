@@ -17,12 +17,20 @@ library XIVDatabaseLib{
     }
     struct IndexCoin{
         uint16 oracleType;
+        string currencySymbol;
+        address contractAddress;
         bool status;
         uint256 contributionPercentage; //10**2
     }
+    struct BetPriceHistory{
+        uint256 baseIndexValue;
+        uint256 actualIndexValue;
+    }
     struct BetInfo{
         uint256 id;
+        uint256 principalAmount;
         uint256 amount;
+        address userAddress;
         address contractAddress;
         uint256 betType;
         uint256 currentPrice;
@@ -30,6 +38,6 @@ library XIVDatabaseLib{
         uint16 checkpointPercent;
         uint16 rewardFactor;
         uint16 riskFactor;
-        uint16 status; // 0->bet active, 1->bet won, 2->bet lost
+        uint16 status; // 0->bet active, 1->bet won, 2->bet lost, 3-> withdraw before result
     }
 }

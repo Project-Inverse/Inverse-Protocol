@@ -3,15 +3,24 @@ pragma solidity >=0.6.0 <0.8.0;
 pragma abicoder v2;
 
 import "./Ownable.sol";
+import "./SafeMath.sol";
 import "./XIVInterface.sol";
 
 contract XIVDatabase is Ownable{
     
+    using SafeMath for uint256;
     mapping (address=>uint256) public tokensStaked; //amount of XIV staked by user
     address[] public userStakedAddress;
     address[] tempArray;
     uint256 public tokenStakedAmount;
+    
     address XIVMainContractAddress;
+    address XIVBettingFixedContractAddress;
+    address XIVBettingFlexibleContractAddress;
+    
+    address oracleWrapperContractAddress = 0x182B5227a8F12DE2381d6663d2B82186ADe80144; //address of oracle wrapper from where the prices would be fetched
+    address XIVTokenContractAddress = 0x7a8D6925cb8faB279883ac3DBccf6f2029eB1315; //XIV contract address
+    address USDTContractAddress = 0xBbf126a88DE8c993BFe67c46Bb333a2eC71bC3fF; //USDT contract address
     
     mapping(address=>XIVDatabaseLib.DefiCoin) public defiCoinsForFixedMapping;
     address[] public allFixedContractAddressArray; 
@@ -20,22 +29,30 @@ contract XIVDatabase is Ownable{
     mapping(address=>XIVDatabaseLib.DefiCoin) public defiCoinsForFlexibleMapping;
     address[] public allFlexibleContractAddressArray;
     
-   
     XIVDatabaseLib.FlexibleInfo[] public flexibleDefiCoinArray;
-    XIVDatabaseLib.FlexibleInfo[] public flexibleIndexArray;
-    
     
     mapping(address=>XIVDatabaseLib.IndexCoin) public defiCoinsForFlexibleIndexMapping;
     address[] public allIndexFlexibleContractAddressArray;
+    XIVDatabaseLib.FlexibleInfo[] public flexibleIndexArray;
+    uint256 public betBaseIndexValueFlexible; //10**8
+    uint256 public betActualIndexValueFlexible;
+    mapping(uint256=>XIVDatabaseLib.IndexCoin[]) betIndexForFlexibleArray; // this include array of imdex on which bet is placed. key will be betId and value will be array of all index... 
+    mapping(uint256=>XIVDatabaseLib.BetPriceHistory) betPriceHistoryFlexibleMapping;
     
     mapping(address=>XIVDatabaseLib.IndexCoin) public defiCoinsForFixedIndexMapping;
     address[] public allIndexFixedContractAddressArray;
-    
+    uint16 public defiCoinBetIndexPercentage; //10**2
+    uint256 public betBaseIndexValueFixed; //10**8
+    uint256 public betActualIndexValueFixed;
+    mapping(uint256=>XIVDatabaseLib.IndexCoin[]) betIndexForFixedArray; // this include array of imdex on which bet is placed. key will be betId and value will be array of all index... 
+    mapping(uint256=>XIVDatabaseLib.BetPriceHistory) betPriceHistoryFixedMapping;
     
     uint256 betid;
     
     XIVDatabaseLib.BetInfo[] public betArray;
     mapping(uint256=>uint256) public findBetInArrayUsingBetIdMapping; // getting the bet index using betid... Key is betId and value will be index in the betArray...
+    
+    mapping(uint256=>uint256) public plentyPercentage; // key is day and value is percentage in 10**2
     
     constructor(){
         addUpdateForDefiCoinFixed(0xC4b3bB3a5e75958F5b7B0C518093F84B878C17e3,"TRB",2,true);
@@ -49,6 +66,21 @@ contract XIVDatabase is Ownable{
         addflexibleDefiCoinArray(500,5000,5000);
         addflexibleDefiCoinArray(600,6000,6000);
         addflexibleDefiCoinArray(700,7000,7000);
+        
+        addflexibleIndexCoinArray(300,3000,3000);
+        addflexibleIndexCoinArray(400,4000,4000);
+        addflexibleIndexCoinArray(500,5000,5000);
+        addflexibleIndexCoinArray(600,6000,6000);
+        addflexibleIndexCoinArray(700,7000,7000);
+        addUpdatePlentyPercentage(0,10000);
+        addUpdatePlentyPercentage(1,5000);
+        addUpdatePlentyPercentage(2,5000);
+        addUpdatePlentyPercentage(3,6000);
+        addUpdatePlentyPercentage(4,7000);
+        addUpdatePlentyPercentage(5,8000);
+        addUpdatePlentyPercentage(6,9000);
+        addUpdatePlentyPercentage(7,10000);
+        
         
     }
     
@@ -97,18 +129,22 @@ contract XIVDatabase is Ownable{
         flexibleDefiCoinArray[index].rewardFactor=_rewardFactor;
     }
     
-     function addUpdateForIndexCoinFlexible(address _ContractAddress, uint16 _OracleType, bool _Status, 
-                                            uint256 _contributionPercentage) public onlyOwner{
+     function addUpdateForIndexCoinFlexible(XIVDatabaseLib.IndexCoin[] memory tupleCoinArray) public onlyOwner{
         // add update index fixed coin
-       XIVDatabaseLib.IndexCoin memory iCoin=XIVDatabaseLib.IndexCoin({
-            oracleType:_OracleType,
-            status:_Status,
-            contributionPercentage:_contributionPercentage
-        });
-        defiCoinsForFlexibleIndexMapping[_ContractAddress]=iCoin;
-        // check wheather contract exists in allFixedContractAddressArray array
-        if(!contractAvailableInArray(_ContractAddress,allIndexFlexibleContractAddressArray)){
-            allIndexFlexibleContractAddressArray.push(_ContractAddress);
+        uint256 totalContribution;
+        for(uint256 i=0;i<tupleCoinArray.length;i++){
+            totalContribution=totalContribution.add(tupleCoinArray[i].contributionPercentage);
+        }
+        require(totalContribution==10000,"Total contribution Percentage should be 100");
+        tempArray=new address[](0);
+        allIndexFlexibleContractAddressArray=tempArray;
+        
+        for(uint256 i=0;i<tupleCoinArray.length;i++){
+            defiCoinsForFlexibleIndexMapping[tupleCoinArray[i].contractAddress]=tupleCoinArray[i];
+            // check wheather contract exists in allFixedContractAddressArray array
+            if(!contractAvailableInArray(tupleCoinArray[i].contractAddress,allIndexFlexibleContractAddressArray)){
+                allIndexFlexibleContractAddressArray.push(tupleCoinArray[i].contractAddress);
+            }
         }
     }
     function addflexibleIndexCoinArray(uint16 _upDownPercentage, uint16 _riskFactor, uint16 _rewardFactor) public onlyOwner{
@@ -126,18 +162,21 @@ contract XIVDatabase is Ownable{
         flexibleIndexArray[index].rewardFactor=_rewardFactor;
     }
     
-    function addUpdateForIndexCoinFixed(address _ContractAddress, uint16 _OracleType, bool _Status,
-                                            uint256 _contributionPercentage) public onlyOwner{
+    function addUpdateForIndexCoinFixed(XIVDatabaseLib.IndexCoin[] memory tupleCoinArray) public onlyOwner{
         // add update index fixed coin
-        XIVDatabaseLib.IndexCoin memory iCoin=XIVDatabaseLib.IndexCoin({
-            oracleType:_OracleType,
-            status:_Status,
-            contributionPercentage:_contributionPercentage
-        });
-        defiCoinsForFixedIndexMapping[_ContractAddress]=iCoin;
-        // check wheather contract exists in allFixedContractAddressArray array
-        if(!contractAvailableInArray(_ContractAddress,allIndexFixedContractAddressArray)){
-            allIndexFixedContractAddressArray.push(_ContractAddress);
+        uint256 totalContribution;
+        for(uint256 i=0;i<tupleCoinArray.length;i++){
+            totalContribution=totalContribution.add(tupleCoinArray[i].contributionPercentage);
+        }
+        require(totalContribution==10000,"Total contribution Percentage should be 100");
+        tempArray=new address[](0);
+        allIndexFixedContractAddressArray=tempArray;
+        for(uint256 i=0;i<tupleCoinArray.length;i++){
+            defiCoinsForFixedIndexMapping[tupleCoinArray[i].contractAddress]=tupleCoinArray[i];
+            // check wheather contract exists in allFixedContractAddressArray array
+            if(!contractAvailableInArray(tupleCoinArray[i].contractAddress,allIndexFixedContractAddressArray)){
+                allIndexFixedContractAddressArray.push(tupleCoinArray[i].contractAddress);
+            }
         }
     }
    
@@ -149,11 +188,11 @@ contract XIVDatabase is Ownable{
         }
         return false;
     }  
-    function saveStakedAddress(bool fromStake) external onlyMyContracts{
+    function saveStakedAddress(bool fromStake, address userAddress) external onlyMyContracts{
         bool isAvailable=false;
         uint256 index;
         for(uint256 i=0;i<userStakedAddress.length;i++){
-            if(userStakedAddress[i]==msg.sender){
+            if(userStakedAddress[i]==userAddress){
                 isAvailable=true;
                 index=i;
                 break;
@@ -161,7 +200,7 @@ contract XIVDatabase is Ownable{
         }
         if(fromStake){
             if(!isAvailable){
-                userStakedAddress.push(msg.sender);
+                userStakedAddress.push(userAddress);
             }  
         }else{
              if(isAvailable){
@@ -181,16 +220,68 @@ contract XIVDatabase is Ownable{
     function updateXIVMainContractAddress(address _XIVMainContractAddress) external onlyOwner{
         XIVMainContractAddress=_XIVMainContractAddress;
     }
+    function updateXIVBettingFixedContractAddress(address _XIVBettingFixedContractAddress) external onlyOwner{
+        XIVBettingFixedContractAddress=_XIVBettingFixedContractAddress;
+    }
+    function updateXIVBettingFlexibleContractAddress(address _XIVBettingFlexibleContractAddress) external onlyOwner{
+        XIVBettingFlexibleContractAddress=_XIVBettingFlexibleContractAddress;
+    }
+    function updateXIVTokenContractAddress(address _XIVTokenContractAddress) external onlyOwner{
+        XIVTokenContractAddress=_XIVTokenContractAddress;
+    }
+    function getXIVTokenContractAddress() external view returns(address){
+        return XIVTokenContractAddress;
+    }
+    function updateUSDTContractAddress(address _USDTContractAddress) external onlyOwner{
+        USDTContractAddress=_USDTContractAddress;
+    }
+    function getUSDTContractAddress() external view returns(address){
+        return USDTContractAddress;
+    }
     function updateDefiBetPercentage(uint16 _defiCoinBetPercentage) external onlyOwner{
         defiCoinBetPercentage=_defiCoinBetPercentage;
     }
+    function getDefiCoinBetPercentage() external view returns(uint16){
+        return defiCoinBetPercentage;
+    }
+    function updateDefiBetIndexPercentage(uint16 _defiCoinBetIndexPercentage) external onlyOwner{
+        defiCoinBetIndexPercentage=_defiCoinBetIndexPercentage;
+    }
+    function getDefiCoinBetIndexPercentage() external view returns(uint16){
+        return defiCoinBetIndexPercentage;
+    }
+    function updateBetBaseIndexValueFixed(uint256 _betBaseIndexValueFixed) external onlyMyContracts{
+        betBaseIndexValueFixed=_betBaseIndexValueFixed;
+    }
+    function getBetBaseIndexValueFixed() external view returns(uint256){
+        return betBaseIndexValueFixed;
+    }
+    function updateBetBaseIndexValueFlexible(uint256 _betBaseIndexValueFlexible) external onlyMyContracts{
+        betBaseIndexValueFlexible=_betBaseIndexValueFlexible;
+    }
+    function getBetBaseIndexValueFlexible() external view returns(uint256){
+        return betBaseIndexValueFlexible;
+    }
+    function updateBetActualIndexValueFixed(uint256 _betActualIndexValueFixed) external onlyMyContracts{
+        betActualIndexValueFixed=_betActualIndexValueFixed;
+    }
+    function getBetActualIndexValueFixed() external view returns(uint256){
+        return betActualIndexValueFixed;
+    }
+    function updateBetActualIndexValueFlexible(uint256 _betActualIndexValueFlexible) external onlyMyContracts{
+        betActualIndexValueFlexible=_betActualIndexValueFlexible;
+    }
+    function getBetActualIndexValueFlexible() external view returns(uint256){
+        return betActualIndexValueFlexible;
+    }
+    
     function transferETH(address payable userAddress,uint256 amount) external onlyMyContracts {
         require(address(this).balance >= amount,"The Contract does not have enough ethers.");
         userAddress.transfer(amount);
     }
     function transferTokens(address contractAddress,address userAddress,uint256 amount) external onlyMyContracts {
         Token tokenObj=Token(contractAddress);
-        require(tokenObj.balanceOf(address(this))> amount, "Tokens not available");
+        require(tokenObj.balanceOf(address(this))>= amount, "Tokens not available");
         tokenObj.transfer(userAddress, amount);
     }
     function transferFromTokens(address contractAddress,address fromAddress, address toAddress,uint256 amount) external onlyMyContracts {
@@ -238,11 +329,11 @@ contract XIVDatabase is Ownable{
         defiCoinsForFixedMapping[_betContractAddress]=_defiCoinObj;
     }
     
-    function getDefiCoinBetPercentage() external view returns(uint16){
-        return defiCoinBetPercentage;
-    }
     function updateBetArray(XIVDatabaseLib.BetInfo memory bObject) external onlyMyContracts{
         betArray.push(bObject);
+    }
+    function updateBetArrayIndex(XIVDatabaseLib.BetInfo memory bObject, uint256 index) external onlyMyContracts{
+        betArray[index]=bObject;
     }
     function getBetArray() external view returns(XIVDatabaseLib.BetInfo[] memory){
         return betArray;
@@ -262,8 +353,64 @@ contract XIVDatabase is Ownable{
     function getFlexibleDefiCoinArray() external view returns(XIVDatabaseLib.FlexibleInfo[] memory){
         return flexibleDefiCoinArray;
     }
+    function getAllIndexFixedAddressArray() external view returns(address[] memory){
+        return allIndexFixedContractAddressArray;
+    }
+    function getAllFixedContractAddressArray() external view returns(address[] memory){
+        return allFixedContractAddressArray;
+    }
+    function getAllFlexibleContractAddressArray() external view returns(address[] memory){
+        return allFlexibleContractAddressArray;
+    }
+    function getAllIndexFlexibleContractAddressArray() external view returns(address[] memory){
+        return allIndexFlexibleContractAddressArray;
+    }
+    function getDefiCoinForFixedIndexMapping(address _ContractAddress) external view returns(XIVDatabaseLib.IndexCoin memory){
+        return (defiCoinsForFixedIndexMapping[_ContractAddress]);
+    }
+    function getDefiCoinForFlexibleIndexMapping(address _ContractAddress) external view returns(XIVDatabaseLib.IndexCoin memory){
+        return (defiCoinsForFlexibleIndexMapping[_ContractAddress]);
+    }
+    function updateBetIndexForFixedArray(uint256 _betId, XIVDatabaseLib.IndexCoin memory iCArray) external onlyMyContracts{
+        betIndexForFixedArray[_betId].push(iCArray);
+    }
+    function getBetIndexForFixedArray(uint256 _betId) external view returns(XIVDatabaseLib.IndexCoin[] memory){
+        return (betIndexForFixedArray[_betId]);
+    }
+    function updateBetIndexForFlexibleArray(uint256 _betId, XIVDatabaseLib.IndexCoin memory iCArray) external onlyMyContracts{
+        betIndexForFlexibleArray[_betId].push(iCArray);
+    }
+    function getBetIndexForFlexibleArray(uint256 _betId) external view returns(XIVDatabaseLib.IndexCoin[] memory){
+        return (betIndexForFlexibleArray[_betId]);
+    }
+    function updateBetPriceHistoryFixedMapping(uint256 _betId, XIVDatabaseLib.BetPriceHistory memory bPHObj) external onlyMyContracts{
+        betPriceHistoryFixedMapping[_betId]=bPHObj;
+    }
+    function getBetPriceHistoryFixedMapping(uint256 _betId) external view returns(XIVDatabaseLib.BetPriceHistory memory){
+        return (betPriceHistoryFixedMapping[_betId]);
+    }
+    function updateBetPriceHistoryFlexibleMapping(uint256 _betId, XIVDatabaseLib.BetPriceHistory memory bPHObj) external onlyMyContracts{
+        betPriceHistoryFlexibleMapping[_betId]=bPHObj;
+    }
+    function getBetPriceHistoryFlexibleMapping(uint256 _betId) external view returns(XIVDatabaseLib.BetPriceHistory memory){
+        return (betPriceHistoryFlexibleMapping[_betId]);
+    }
+    function addUpdatePlentyPercentage(uint256 _days, uint256 percentage) public onlyOwner{
+        plentyPercentage[_days]=percentage;
+    }
+    function getPlentyPercentage(uint256 _days) external view returns(uint256){
+        return (plentyPercentage[_days]);
+    }
+    function updateOrcaleAddress(address oracleAddress) public onlyOwner{
+        oracleWrapperContractAddress=oracleAddress;
+    }
+    function getOracleWrapperContractAddress() external view returns(address){
+        return oracleWrapperContractAddress;
+    }
     modifier onlyMyContracts() {
-        require(msg.sender == XIVMainContractAddress);
+        require(msg.sender == XIVMainContractAddress || msg.sender==XIVBettingFixedContractAddress || msg.sender== XIVBettingFlexibleContractAddress);
         _;
+    }
+    fallback() external payable {
     }
 }

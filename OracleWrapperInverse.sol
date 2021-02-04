@@ -4,6 +4,7 @@ pragma abicoder v2;
 
 contract OracleWrapperInverse{
     address owner;
+    bool isExtraAdded=false;
     address public tellerContractAddress;
     struct TellorInfo{
         uint256 id;
@@ -12,9 +13,17 @@ contract OracleWrapperInverse{
     uint256 tellorId=1;
     mapping(string=>address) public typeOneMapping;  // chainlink
     mapping(string=> TellorInfo) public typeTwomapping; // tellor
+    mapping(string=>uint256) public staticPricesMapping;
     
     constructor(){
         owner= msg.sender;
+    }
+    
+    function updateIsExtraAdded(bool _isExtraAdded) public onlyOwner{
+        isExtraAdded = _isExtraAdded;
+    }
+    function updateStaticPricesMapping(string memory currencySymbol, uint256 amount) public onlyOwner{
+        staticPricesMapping[currencySymbol] = amount;
     }
     
     function updateTellerContractAddress(address newAddress) public onlyOwner{
@@ -40,7 +49,11 @@ contract OracleWrapperInverse{
         if(oracleType == 1){
             require(typeOneMapping[currencySymbol]!=address(0), "please enter valid currency");
             OracleInterface oObj = OracleInterface(typeOneMapping[currencySymbol]);
-            return uint256(oObj.latestAnswer());
+            if(isExtraAdded){
+                return(staticPricesMapping[currencySymbol]);
+            }else{
+                return uint256(oObj.latestAnswer());
+            }
         }
         else{
             require(typeTwomapping[currencySymbol].id!=0, "please enter valid currency");
@@ -48,7 +61,11 @@ contract OracleWrapperInverse{
             uint256 actualFiatPrice;
             bool statusTellor;
             (actualFiatPrice,statusTellor) = tObj.getLastNewValueById(typeTwomapping[currencySymbol].tellorPSR);
-            return uint256(actualFiatPrice);
+              if(isExtraAdded){
+                return(staticPricesMapping[currencySymbol]);
+            }else{
+                return uint256(actualFiatPrice);
+            }
         }
     }
     
