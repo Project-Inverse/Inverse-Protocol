@@ -13,7 +13,7 @@ contract XIVBettingFlexible is Ownable{
     
     XIVDatabaseLib.IndexCoin[] tempObjectArray;
     
-    function betFlexible(uint256 amountOfXIV, uint16 typeOfBet, address _betContractAddress, uint256 betSlabeIndex) public{
+    function betFlexible(uint256 amountOfXIV, uint16 typeOfBet, address _betContractAddress, uint256 betSlabeIndex) external{
         // 0-> defi Fixed, 1->defi flexible, 2-> index Fixed and 3-> index flexible
         require(typeOfBet==1 || typeOfBet==3, "Invalid bet Type");
         require(checkIfBetExists(typeOfBet,_betContractAddress),"you can't place bet using these values.");
@@ -81,7 +81,7 @@ contract XIVBettingFlexible is Ownable{
         }
         return true;
     }
-    function calculateIndexValueForBetActualFlexible() public view returns(uint256){
+    function calculateIndexValueForBetActualFlexible() external view returns(uint256){
         DatabaseContract dContract=DatabaseContract(databaseContractAddress);
         OracleWrapper oWObject=OracleWrapper(dContract.getOracleWrapperContractAddress());
         uint256 totalMarketcap;
@@ -97,7 +97,7 @@ contract XIVBettingFlexible is Ownable{
         }
         return totalMarketcap;
     }
-    function calculateIndexValueForBetBaseFlexible() public view returns(uint256){
+    function calculateIndexValueForBetBaseFlexible() external view returns(uint256){
         DatabaseContract dContract=DatabaseContract(databaseContractAddress);
         OracleWrapper oWObject=OracleWrapper(dContract.getOracleWrapperContractAddress());
         uint256 totalMarketcap;
@@ -163,7 +163,7 @@ contract XIVBettingFlexible is Ownable{
         return totalMarketcap;
     }
     
-    function claimBet(uint256 userBetId) public{
+    function claimBet(uint256 userBetId) external{
         // 0-> defi Fixed, 1->defi flexible, 2-> index Fixed and 3-> index flexible
         DatabaseContract dContract=DatabaseContract(databaseContractAddress);
         uint256 index=dContract.getFindBetInArrayUsingBetIdMapping(userBetId);
@@ -241,7 +241,7 @@ contract XIVBettingFlexible is Ownable{
         dContract.updateTokenStakedAmount(dContract.getTokenStakedAmount().add(plentyAmount));
         dContract.updateBetArrayIndex(bObject,index);
     }
-    function updateDatabaseAddress(address _databaseContractAddress) public onlyOwner{
+    function updateDatabaseAddress(address _databaseContractAddress) external onlyOwner{
         databaseContractAddress=_databaseContractAddress;
     }
 }

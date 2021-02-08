@@ -17,12 +17,12 @@ contract XIVMain is Ownable{
     
     XIVDatabaseLib.IndexCoin[] tempObjectArray;
     
-     function getXIVPrice(uint16 typeOfPrice) public view returns(uint256){
+     function getXIVPrice(uint16 typeOfPrice) external view returns(uint256){
         //typeOfPrice =0 for eth and 1 for USDT
         //TODO fetch price from price oracle
         return typeOfPrice == 0 ? XIVPrice : XIVPriceInUSDT;
     }
-    function setXIVPrice(uint256 price, uint16 typeOfPrice) public onlyOwner{
+    function setXIVPrice(uint256 price, uint16 typeOfPrice) external onlyOwner{
         //TODO to be removed when XIV price available in price oracle
         if(typeOfPrice == 0){
             XIVPrice = price;
@@ -51,7 +51,7 @@ contract XIVMain is Ownable{
         }
         
     }
-    function buyTokens(uint16 typeOfBuy, uint256 amount) public payable{
+    function buyTokens(uint16 typeOfBuy, uint256 amount) external payable{
         //typeOfBuy ==0 ETH and 1 for USDT
         DatabaseContract dContract=DatabaseContract(databaseContractAddress);
         if(typeOfBuy == 0){
@@ -63,7 +63,7 @@ contract XIVMain is Ownable{
             dContract.transferTokens(dContract.getXIVTokenContractAddress(),msg.sender,calculateAmtOfTokens(amount,1));
         }
     }
-    function sellTokens(uint256 amountOfTokensToBeSold, uint256 typeOfCurrencyTobeReturned) public{
+    function sellTokens(uint256 amountOfTokensToBeSold, uint256 typeOfCurrencyTobeReturned) external{
         //typeOfCurrencyTobeReturned  == 0 for ETH and 1 for USDT
         DatabaseContract dContract=DatabaseContract(databaseContractAddress);
         if(typeOfCurrencyTobeReturned == 0){ 
@@ -75,7 +75,7 @@ contract XIVMain is Ownable{
         }
         
     }
-    function stakeTokens(uint256 amount) public{
+    function stakeTokens(uint256 amount) external{
         DatabaseContract dContract=DatabaseContract(databaseContractAddress);
         Token tokenObj = Token(dContract.getXIVTokenContractAddress());
         //check if user has balance
@@ -91,7 +91,7 @@ contract XIVMain is Ownable{
         dContract.updateTokenStakedAmount(dContract.getTokenStakedAmount().add(userAmount));
         dContract.saveStakedAddress(true, msg.sender);
     }
-     function unStakeTokens(uint256 amount) public{
+     function unStakeTokens(uint256 amount) external{
         DatabaseContract dContract=DatabaseContract(databaseContractAddress);
         require(dContract.getTokensStaked(msg.sender)>=amount, "You don't have enough staking balance");
         dContract.transferTokens(dContract.getXIVTokenContractAddress(),msg.sender,amount);
@@ -100,7 +100,7 @@ contract XIVMain is Ownable{
         dContract.saveStakedAddress(false, msg.sender);
     }
     
-    function updateDatabaseAddress(address _databaseContractAddress) public onlyOwner{
+    function updateDatabaseAddress(address _databaseContractAddress) external onlyOwner{
         databaseContractAddress=_databaseContractAddress;
     }
 }

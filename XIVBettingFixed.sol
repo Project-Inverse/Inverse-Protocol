@@ -16,7 +16,7 @@ contract XIVBettingFixed is Ownable{
     
     XIVDatabaseLib.IndexCoin[] tempObjectArray;
     
-     function betFixed(uint256 amountOfXIV, uint16 typeOfBet, address _betContractAddress) public{
+     function betFixed(uint256 amountOfXIV, uint16 typeOfBet, address _betContractAddress) external{
         // 0-> defi Fixed, 1->defi flexible, 2-> index Fixed and 3-> index flexible
         require(typeOfBet==0 || typeOfBet==2,"Invalid bet Type");
         require(checkIfBetExists(typeOfBet,_betContractAddress),"you can't place bet using these values.");
@@ -84,7 +84,7 @@ contract XIVBettingFixed is Ownable{
         }
         return true;
     }
-    function calculateIndexValueForBetActualFixed() public view returns(uint256){
+    function calculateIndexValueForBetActualFixed() external view returns(uint256){
         DatabaseContract dContract=DatabaseContract(databaseContractAddress);
         OracleWrapper oWObject=OracleWrapper(dContract.getOracleWrapperContractAddress());
         uint256 totalMarketcap;
@@ -100,7 +100,7 @@ contract XIVBettingFixed is Ownable{
         }
         return totalMarketcap;
     }
-    function calculateIndexValueForBetBaseFixed() public view returns(uint256){
+    function calculateIndexValueForBetBaseFixed() external view returns(uint256){
         DatabaseContract dContract=DatabaseContract(databaseContractAddress);
         OracleWrapper oWObject=OracleWrapper(dContract.getOracleWrapperContractAddress());
         uint256 totalMarketcap;
@@ -165,7 +165,7 @@ contract XIVBettingFixed is Ownable{
         dContract.updateBetActualIndexValueFixed(totalMarketcap);
         return totalMarketcap;
     }
-    function updateStatus() public {
+    function updateStatus() external {
         DatabaseContract dContract=DatabaseContract(databaseContractAddress);
         OracleWrapper oWObject=OracleWrapper(dContract.getOracleWrapperContractAddress());
         for(uint256 i=0;i<dContract.getBetArray().length;i++){
@@ -319,7 +319,7 @@ contract XIVBettingFixed is Ownable{
         }
     }
     
-    function updateDatabaseAddress(address _databaseContractAddress) public onlyOwner{
+    function updateDatabaseAddress(address _databaseContractAddress) external onlyOwner{
         databaseContractAddress=_databaseContractAddress;
     }
 }

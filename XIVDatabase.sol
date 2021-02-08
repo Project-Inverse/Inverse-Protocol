@@ -408,7 +408,7 @@ contract XIVDatabase is Ownable{
     function getPlentyPercentage(uint256 _days) external view returns(uint256){
         return (plentyPercentage[_days]);
     }
-    function updateOrcaleAddress(address oracleAddress) public onlyOwner{
+    function updateOrcaleAddress(address oracleAddress) external onlyOwner{
         oracleWrapperContractAddress=oracleAddress;
     }
     function getOracleWrapperContractAddress() external view returns(address){
