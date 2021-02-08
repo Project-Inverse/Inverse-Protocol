@@ -9,13 +9,14 @@ import "./XIVInterface.sol";
 contract XIVBettingFlexible is Ownable{
     
     using SafeMath for uint256;
-    address public databaseContractAddress=0xa9E9B8ca2BE27bf79dE95Fe2117f2Bd9Cc629bCb;
+    address public databaseContractAddress=0xC4794a0DaaC8F4d6646656C0Df170f8573Aadf55;
     
     XIVDatabaseLib.IndexCoin[] tempObjectArray;
     
     function betFlexible(uint256 amountOfXIV, uint16 typeOfBet, address _betContractAddress, uint256 betSlabeIndex) public{
         // 0-> defi Fixed, 1->defi flexible, 2-> index Fixed and 3-> index flexible
         require(typeOfBet==1 || typeOfBet==3, "Invalid bet Type");
+        require(checkIfBetExists(typeOfBet,_betContractAddress),"you can't place bet using these values.");
         DatabaseContract dContract=DatabaseContract(databaseContractAddress);
         if(typeOfBet==1){
             //defi flexible
@@ -37,6 +38,7 @@ contract XIVBettingFlexible is Ownable{
             });
             dContract.updateBetArray(binfo);
             dContract.updateFindBetInArrayUsingBetIdMapping(dContract.getBetId(),dContract.getBetArray().length.sub(1));
+            dContract.updateBetAddressesArray(msg.sender,dContract.getBetId());
             dContract.updateBetId(dContract.getBetId().add(1));
         }else if(typeOfBet==3){
             //index flexible
@@ -56,11 +58,29 @@ contract XIVBettingFlexible is Ownable{
             });
             dContract.updateBetArray(binfo);
             dContract.updateFindBetInArrayUsingBetIdMapping(dContract.getBetId(),dContract.getBetArray().length.sub(1));
+            dContract.updateBetAddressesArray(msg.sender,dContract.getBetId());
             dContract.updateBetId(dContract.getBetId().add(1));
         }
         dContract.transferFromTokens(dContract.getXIVTokenContractAddress(),msg.sender,databaseContractAddress,amountOfXIV);
     }
     
+    function checkIfBetExists(uint16 typeOfBet, address _betContractAddress) internal view returns(bool){
+        DatabaseContract dContract=DatabaseContract(databaseContractAddress);
+        uint256[] memory betIdArray=dContract.getBetsAccordingToUserAddress(msg.sender);
+        for(uint256 i=0;i<betIdArray.length;i++){
+            XIVDatabaseLib.BetInfo memory bObject=dContract.getBetArray()[dContract.getFindBetInArrayUsingBetIdMapping(i)];
+            if(typeOfBet==1){
+                if(bObject.status==0 && bObject.contractAddress==_betContractAddress){
+                    return false;
+                }
+            }else{
+                if(bObject.status==0){
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
     function calculateIndexValueForBetActualFlexible() public view returns(uint256){
         DatabaseContract dContract=DatabaseContract(databaseContractAddress);
         OracleWrapper oWObject=OracleWrapper(dContract.getOracleWrapperContractAddress());

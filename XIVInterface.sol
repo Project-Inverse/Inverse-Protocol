@@ -77,4 +77,8 @@ interface DatabaseContract{
     function getBetActualIndexValueFlexible() external view returns(uint256);
     function getOracleWrapperContractAddress() external view returns(address);
     function getPlentyPercentage(uint256 _days) external view returns(uint256);
+    function getAdminAddress() external view returns(address);
+    function getAdminStakingFee() external view returns(uint256);
+    function getBetsAccordingToUserAddress(address userAddress) external view returns(uint256[] memory);
+    function updateBetAddressesArray(address userAddress, uint256 _betId) external;
 }

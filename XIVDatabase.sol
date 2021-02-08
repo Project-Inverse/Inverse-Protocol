@@ -14,11 +14,14 @@ contract XIVDatabase is Ownable{
     address[] tempArray;
     uint256 public tokenStakedAmount;
     
+    uint256 public adminStakingFee;// 10**2
+    address public adminAddress;
+    
     address XIVMainContractAddress;
     address XIVBettingFixedContractAddress;
     address XIVBettingFlexibleContractAddress;
     
-    address oracleWrapperContractAddress = 0x182B5227a8F12DE2381d6663d2B82186ADe80144; //address of oracle wrapper from where the prices would be fetched
+    address oracleWrapperContractAddress = 0xCa36DaDB34F5E6e20CB0FC47497a3b12238b4568; //address of oracle wrapper from where the prices would be fetched
     address XIVTokenContractAddress = 0x7a8D6925cb8faB279883ac3DBccf6f2029eB1315; //XIV contract address
     address USDTContractAddress = 0xBbf126a88DE8c993BFe67c46Bb333a2eC71bC3fF; //USDT contract address
     
@@ -51,6 +54,7 @@ contract XIVDatabase is Ownable{
     
     XIVDatabaseLib.BetInfo[] public betArray;
     mapping(uint256=>uint256) public findBetInArrayUsingBetIdMapping; // getting the bet index using betid... Key is betId and value will be index in the betArray...
+    mapping(address=> uint256[]) public betAddressesArray;
     
     mapping(uint256=>uint256) public plentyPercentage; // key is day and value is percentage in 10**2
     
@@ -61,17 +65,17 @@ contract XIVDatabase is Ownable{
         addUpdateForDefiCoinFlexible(0xC4b3bB3a5e75958F5b7B0C518093F84B878C17e3,"TRB",2,true);
         addUpdateForDefiCoinFlexible(0x3A435D2aeF6b369762A64C42f8fbD65d5F5e61fa,"LINK",1,true);
         addUpdateForDefiCoinFlexible(0xBbf126a88DE8c993BFe67c46Bb333a2eC71bC3fF,"USDC",1,true);
-        addflexibleDefiCoinArray(300,3000,3000);
-        addflexibleDefiCoinArray(400,4000,4000);
-        addflexibleDefiCoinArray(500,5000,5000);
-        addflexibleDefiCoinArray(600,6000,6000);
-        addflexibleDefiCoinArray(700,7000,7000);
+        addflexibleDefiCoinArray(900,1000,1000);
+        addflexibleDefiCoinArray(1000,2000,2000);
+        addflexibleDefiCoinArray(1200,4000,4000);
+        addflexibleDefiCoinArray(1400,7000,7000);
+        addflexibleDefiCoinArray(1500,10000,10000);
         
-        addflexibleIndexCoinArray(300,3000,3000);
-        addflexibleIndexCoinArray(400,4000,4000);
-        addflexibleIndexCoinArray(500,5000,5000);
-        addflexibleIndexCoinArray(600,6000,6000);
-        addflexibleIndexCoinArray(700,7000,7000);
+        addflexibleIndexCoinArray(900,1000,1000);
+        addflexibleIndexCoinArray(1000,2000,2000);
+        addflexibleIndexCoinArray(1200,4000,4000);
+        addflexibleIndexCoinArray(1400,7000,7000);
+        addflexibleIndexCoinArray(1500,10000,10000);
         addUpdatePlentyPercentage(0,10000);
         addUpdatePlentyPercentage(1,5000);
         addUpdatePlentyPercentage(2,5000);
@@ -80,8 +84,6 @@ contract XIVDatabase is Ownable{
         addUpdatePlentyPercentage(5,8000);
         addUpdatePlentyPercentage(6,9000);
         addUpdatePlentyPercentage(7,10000);
-        
-        
     }
     
     function addUpdateForDefiCoinFixed(address _ContractAddress, string memory _currencySymbol, 
@@ -149,7 +151,7 @@ contract XIVDatabase is Ownable{
     }
     function addflexibleIndexCoinArray(uint16 _upDownPercentage, uint16 _riskFactor, uint16 _rewardFactor) public onlyOwner{
         XIVDatabaseLib.FlexibleInfo memory fobject=XIVDatabaseLib.FlexibleInfo({
-            id:flexibleDefiCoinArray.length,
+            id:flexibleIndexArray.length,
             upDownPercentage:_upDownPercentage,
             riskFactor:_riskFactor,
             rewardFactor:_rewardFactor
@@ -353,6 +355,11 @@ contract XIVDatabase is Ownable{
     function getFlexibleDefiCoinArray() external view returns(XIVDatabaseLib.FlexibleInfo[] memory){
         return flexibleDefiCoinArray;
     }
+    
+    function getFlexibleIndexArray() external view returns(XIVDatabaseLib.FlexibleInfo[] memory){
+        return flexibleIndexArray;
+    }
+    
     function getAllIndexFixedAddressArray() external view returns(address[] memory){
         return allIndexFixedContractAddressArray;
     }
@@ -406,6 +413,24 @@ contract XIVDatabase is Ownable{
     }
     function getOracleWrapperContractAddress() external view returns(address){
         return oracleWrapperContractAddress;
+    }
+    function getAdminStakingFee() external view returns(uint256){
+        return adminStakingFee;
+    }
+    function updateAdminStakingFee(uint256 _adminStakingFee) external onlyOwner{
+        adminStakingFee=_adminStakingFee;
+    }
+    function getAdminAddress() external view returns(address){
+        return adminAddress;
+    }
+    function updateAdminAddress(address _adminAddress) external onlyOwner{
+        adminAddress=_adminAddress;
+    }
+    function getBetsAccordingToUserAddress(address userAddress) external view returns(uint256[] memory){
+        return betAddressesArray[userAddress];
+    }
+    function updateBetAddressesArray(address userAddress, uint256 _betId) external onlyMyContracts{
+        betAddressesArray[userAddress].push(_betId);
     }
     modifier onlyMyContracts() {
         require(msg.sender == XIVMainContractAddress || msg.sender==XIVBettingFixedContractAddress || msg.sender== XIVBettingFlexibleContractAddress);

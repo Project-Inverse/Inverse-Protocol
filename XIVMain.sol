@@ -13,7 +13,7 @@ contract XIVMain is Ownable{
     uint256 XIVPrice=1000000000000000000; //in wei, 18 decimals
     uint256 XIVPriceInUSDT=100000000; // in tokens with decimals 
     
-    address public databaseContractAddress=0xa9E9B8ca2BE27bf79dE95Fe2117f2Bd9Cc629bCb;
+    address public databaseContractAddress=0xC4794a0DaaC8F4d6646656C0Df170f8573Aadf55;
     
     XIVDatabaseLib.IndexCoin[] tempObjectArray;
     
@@ -77,9 +77,18 @@ contract XIVMain is Ownable{
     }
     function stakeTokens(uint256 amount) public{
         DatabaseContract dContract=DatabaseContract(databaseContractAddress);
-        dContract.transferFromTokens(dContract.getXIVTokenContractAddress(),msg.sender,databaseContractAddress,amount);
-        dContract.updateTokensStaked(msg.sender,dContract.getTokensStaked(msg.sender).add(amount));
-        dContract.updateTokenStakedAmount(dContract.getTokenStakedAmount().add(amount));
+        Token tokenObj = Token(dContract.getXIVTokenContractAddress());
+        //check if user has balance
+        require(tokenObj.balanceOf(msg.sender) >= amount, "You don't have enough XIV balance");
+        //check if user has provided allowance
+        require(tokenObj.allowance(msg.sender,databaseContractAddress) >= amount, 
+        "Please allow smart contract to spend on your behalf");
+        uint256 adminAmount=((dContract.getAdminStakingFee().mul(amount)).div(10**4));
+        uint256 userAmount=amount.sub(adminAmount);
+        dContract.transferFromTokens(dContract.getXIVTokenContractAddress(),msg.sender,dContract.getAdminAddress(),adminAmount);
+        dContract.transferFromTokens(dContract.getXIVTokenContractAddress(),msg.sender,databaseContractAddress,userAmount);
+        dContract.updateTokensStaked(msg.sender,dContract.getTokensStaked(msg.sender).add(userAmount));
+        dContract.updateTokenStakedAmount(dContract.getTokenStakedAmount().add(userAmount));
         dContract.saveStakedAddress(true, msg.sender);
     }
      function unStakeTokens(uint256 amount) public{
