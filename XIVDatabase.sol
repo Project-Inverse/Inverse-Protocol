@@ -12,6 +12,7 @@ contract XIVDatabase is Ownable{
     mapping (address=>uint256) public tokensStaked; //amount of XIV staked by user
     address[] public userStakedAddress;
     address[] tempArray;
+    // XIVDatabaseLib.BetInfo[] tempBetArray;
     uint256 public tokenStakedAmount;
     
     uint256 public adminStakingFee;// 10**2

@@ -12,7 +12,7 @@ contract XIVBettingFixed is Ownable{
     uint256 secondsInADay=86400;
     // uint256 sevenDays= 7 days;
     uint256 sevenDays= 300;
-    address public databaseContractAddress=0xC4794a0DaaC8F4d6646656C0Df170f8573Aadf55;
+    address public databaseContractAddress=0xA500f7620DE3Ab37699D119dB5DCB348B07deF7F;
     
     XIVDatabaseLib.IndexCoin[] tempObjectArray;
     
@@ -73,11 +73,11 @@ contract XIVBettingFixed is Ownable{
         for(uint256 i=0;i<betIdArray.length;i++){
             XIVDatabaseLib.BetInfo memory bObject=dContract.getBetArray()[dContract.getFindBetInArrayUsingBetIdMapping(i)];
             if(typeOfBet==0){
-                if(bObject.status==0 && bObject.contractAddress==_betContractAddress){
+                if(bObject.status==0 && bObject.contractAddress==_betContractAddress && bObject.betType==0){
                     return false;
                 }
-            }else{
-                if(bObject.status==0){
+            }else if(typeOfBet==2){
+                if(bObject.status==0 && bObject.betType==2){
                     return false;
                 }
             }
@@ -263,7 +263,7 @@ contract XIVBettingFixed is Ownable{
         }
     }
     
-    function updateXIVForStakersIndexFixed(uint256 index) internal{
+    function getCalculateIndexValueForFixed(uint256 index) public view returns(uint256){
         DatabaseContract dContract=DatabaseContract(databaseContractAddress);
         OracleWrapper oWObject=OracleWrapper(dContract.getOracleWrapperContractAddress());
         uint256 totalMarketcap;
@@ -278,6 +278,13 @@ contract XIVBettingFixed is Ownable{
                                     .div((10**tObj.decimals()).mul(10**4))));
             }
         }
+        return totalMarketcap;
+    }
+    
+    function updateXIVForStakersIndexFixed(uint256 index) internal{
+        DatabaseContract dContract=DatabaseContract(databaseContractAddress);
+        uint256 totalMarketcap=getCalculateIndexValueForFixed(index);
+        XIVDatabaseLib.BetInfo memory bObject=dContract.getBetArray()[index];
         if(dContract.getBetPriceHistoryFixedMapping(bObject.id).actualIndexValue>totalMarketcap){
              uint16 percentageValue=uint16(((dContract.getBetPriceHistoryFixedMapping(bObject.id).actualIndexValue.sub(totalMarketcap)
                                                      .mul(10**4)).div(dContract.getBetPriceHistoryFixedMapping(bObject.id).actualIndexValue)));
@@ -290,8 +297,7 @@ contract XIVBettingFixed is Ownable{
             updateXIVForStakersFixed(index, false,2);
         }
     }
-    
-    function updateXIVForStakersIndexFlexible(uint256 index) internal{
+    function getCalculateIndexValueForFlexible(uint256 index) public view returns(uint256){
         DatabaseContract dContract=DatabaseContract(databaseContractAddress);
         OracleWrapper oWObject=OracleWrapper(dContract.getOracleWrapperContractAddress());
         uint256 totalMarketcap;
@@ -306,6 +312,12 @@ contract XIVBettingFixed is Ownable{
                                     .div((10**tObj.decimals()).mul(10**4))));
             }
         }
+        return totalMarketcap;
+    }
+    function updateXIVForStakersIndexFlexible(uint256 index) internal{
+        DatabaseContract dContract=DatabaseContract(databaseContractAddress);
+        uint256 totalMarketcap=getCalculateIndexValueForFlexible(index);
+        XIVDatabaseLib.BetInfo memory bObject=dContract.getBetArray()[index];
         if(dContract.getBetPriceHistoryFlexibleMapping(bObject.id).actualIndexValue>totalMarketcap){
              uint16 percentageValue=uint16(((dContract.getBetPriceHistoryFlexibleMapping(bObject.id).actualIndexValue.sub(totalMarketcap)
                                                      .mul(10**4)).div(dContract.getBetPriceHistoryFlexibleMapping(bObject.id).actualIndexValue)));

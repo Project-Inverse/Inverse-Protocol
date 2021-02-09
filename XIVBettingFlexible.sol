@@ -9,7 +9,7 @@ import "./XIVInterface.sol";
 contract XIVBettingFlexible is Ownable{
     
     using SafeMath for uint256;
-    address public databaseContractAddress=0xC4794a0DaaC8F4d6646656C0Df170f8573Aadf55;
+    address public databaseContractAddress=0xA500f7620DE3Ab37699D119dB5DCB348B07deF7F;
     
     XIVDatabaseLib.IndexCoin[] tempObjectArray;
     
@@ -70,11 +70,11 @@ contract XIVBettingFlexible is Ownable{
         for(uint256 i=0;i<betIdArray.length;i++){
             XIVDatabaseLib.BetInfo memory bObject=dContract.getBetArray()[dContract.getFindBetInArrayUsingBetIdMapping(i)];
             if(typeOfBet==1){
-                if(bObject.status==0 && bObject.contractAddress==_betContractAddress){
+                if(bObject.status==0 && bObject.contractAddress==_betContractAddress && bObject.betType==1){
                     return false;
                 }
-            }else{
-                if(bObject.status==0){
+            }else if(typeOfBet==3){
+                if(bObject.status==0 && bObject.betType==3){
                     return false;
                 }
             }

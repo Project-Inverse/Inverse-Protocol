@@ -13,7 +13,7 @@ contract XIVMain is Ownable{
     uint256 XIVPrice=1000000000000000000; //in wei, 18 decimals
     uint256 XIVPriceInUSDT=100000000; // in tokens with decimals 
     
-    address public databaseContractAddress=0xC4794a0DaaC8F4d6646656C0Df170f8573Aadf55;
+    address public databaseContractAddress=0xA500f7620DE3Ab37699D119dB5DCB348B07deF7F;
     
     XIVDatabaseLib.IndexCoin[] tempObjectArray;
     
