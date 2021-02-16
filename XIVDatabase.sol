@@ -22,7 +22,7 @@ contract XIVDatabase is Ownable{
     address XIVBettingFixedContractAddress;
     address XIVBettingFlexibleContractAddress;
     
-    address oracleWrapperContractAddress = 0xCa36DaDB34F5E6e20CB0FC47497a3b12238b4568; //address of oracle wrapper from where the prices would be fetched
+    address oracleWrapperContractAddress = 0x727D4c4401aC0a4F430cc7e9B743B7970e1929b9; //address of oracle wrapper from where the prices would be fetched
     address XIVTokenContractAddress = 0x7a8D6925cb8faB279883ac3DBccf6f2029eB1315; //XIV contract address
     address USDTContractAddress = 0xBbf126a88DE8c993BFe67c46Bb333a2eC71bC3fF; //USDT contract address
     

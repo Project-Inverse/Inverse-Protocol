@@ -9,7 +9,7 @@ import "./XIVInterface.sol";
 contract XIVBettingFlexible is Ownable{
     
     using SafeMath for uint256;
-    address public databaseContractAddress=0xA500f7620DE3Ab37699D119dB5DCB348B07deF7F;
+    address public databaseContractAddress=0x752e144BF110207d925691F78a84b07437ff5544;
     
     XIVDatabaseLib.IndexCoin[] tempObjectArray;
     
@@ -68,7 +68,7 @@ contract XIVBettingFlexible is Ownable{
         DatabaseContract dContract=DatabaseContract(databaseContractAddress);
         uint256[] memory betIdArray=dContract.getBetsAccordingToUserAddress(msg.sender);
         for(uint256 i=0;i<betIdArray.length;i++){
-            XIVDatabaseLib.BetInfo memory bObject=dContract.getBetArray()[dContract.getFindBetInArrayUsingBetIdMapping(i)];
+            XIVDatabaseLib.BetInfo memory bObject=dContract.getBetArray()[dContract.getFindBetInArrayUsingBetIdMapping(betIdArray[i])];
             if(typeOfBet==1){
                 if(bObject.status==0 && bObject.contractAddress==_betContractAddress && bObject.betType==1){
                     return false;
@@ -235,7 +235,7 @@ contract XIVBettingFlexible is Ownable{
         bObject.amount=0;
             for(uint256 i=0;i<dContract.getUserStakedAddress().length;i++){
                 address userAddress=dContract.getUserStakedAddress()[i];
-                uint256 updatedAmount=dContract.getTokensStaked(userAddress).add((((dContract.getTokensStaked(userAddress).mul(10**4)).div(dContract.getTokenStakedAmount()).mul(plentyAmount)).div(10**4)));
+                uint256 updatedAmount=dContract.getTokensStaked(userAddress).add((((dContract.getTokensStaked(userAddress).mul(10**4)).mul(plentyAmount)).div(dContract.getTokenStakedAmount().mul(10**4))));
                 dContract.updateTokensStaked(userAddress,updatedAmount);
             }
         dContract.updateTokenStakedAmount(dContract.getTokenStakedAmount().add(plentyAmount));

@@ -10,9 +10,10 @@ contract XIVBettingFixed is Ownable{
     
     using SafeMath for uint256;
     uint256 secondsInADay=86400;
-    // uint256 sevenDays= 7 days;
-    uint256 sevenDays= 300;
-    address public databaseContractAddress=0xA500f7620DE3Ab37699D119dB5DCB348B07deF7F;
+    uint256 sevenDays= 1 days;
+    // uint256 sevenDays= 300;
+    uint256 stakeOffset;
+    address public databaseContractAddress=0x752e144BF110207d925691F78a84b07437ff5544;
     
     XIVDatabaseLib.IndexCoin[] tempObjectArray;
     
@@ -71,7 +72,7 @@ contract XIVBettingFixed is Ownable{
         DatabaseContract dContract=DatabaseContract(databaseContractAddress);
         uint256[] memory betIdArray=dContract.getBetsAccordingToUserAddress(msg.sender);
         for(uint256 i=0;i<betIdArray.length;i++){
-            XIVDatabaseLib.BetInfo memory bObject=dContract.getBetArray()[dContract.getFindBetInArrayUsingBetIdMapping(i)];
+            XIVDatabaseLib.BetInfo memory bObject=dContract.getBetArray()[dContract.getFindBetInArrayUsingBetIdMapping(betIdArray[i])];
             if(typeOfBet==0){
                 if(bObject.status==0 && bObject.contractAddress==_betContractAddress && bObject.betType==0){
                     return false;
@@ -168,6 +169,7 @@ contract XIVBettingFixed is Ownable{
     function updateStatus() external {
         DatabaseContract dContract=DatabaseContract(databaseContractAddress);
         OracleWrapper oWObject=OracleWrapper(dContract.getOracleWrapperContractAddress());
+        stakeOffset=dContract.getTokenStakedAmount();
         for(uint256 i=0;i<dContract.getBetArray().length;i++){
             XIVDatabaseLib.BetInfo memory bObject=dContract.getBetArray()[i];
             if(bObject.status==0){
@@ -213,26 +215,24 @@ contract XIVBettingFixed is Ownable{
                 }
             }
         }
+        for(uint256 i=0;i<dContract.getUserStakedAddress().length;i++){
+            uint256 updatedAmount=(((dContract.getTokensStaked(dContract.getUserStakedAddress()[i]).mul(10**4).mul(stakeOffset))
+                                    .div(dContract.getTokenStakedAmount().mul(10**4))));
+            dContract.updateTokensStaked(dContract.getUserStakedAddress()[i],updatedAmount);
+        }
+        dContract.updateTokenStakedAmount(stakeOffset);
     }
     function updateXIVForStakersFixed(uint256 index, bool isWon, uint256 rewardMultipler) internal{
         DatabaseContract dContract=DatabaseContract(databaseContractAddress);
         XIVDatabaseLib.BetInfo memory bObject=dContract.getBetArray()[index];
         if(isWon){
             bObject.status=1;
-            for(uint256 i=0;i<dContract.getUserStakedAddress().length;i++){
-                uint256 updatedAmount=dContract.getTokensStaked(dContract.getUserStakedAddress()[i]).sub((((dContract.getTokensStaked(dContract.getUserStakedAddress()[i]).mul(10**4)).div(dContract.getTokenStakedAmount()).mul(dContract.getBetArray()[index].amount.mul(rewardMultipler.sub(1)))).div(10**4)));
-                dContract.updateTokensStaked(dContract.getUserStakedAddress()[i],updatedAmount);
-            }
-            dContract.updateTokenStakedAmount(dContract.getTokenStakedAmount().sub(dContract.getBetArray()[index].amount.mul(rewardMultipler.sub(1))));
+            stakeOffset=stakeOffset.sub((bObject.amount).mul(rewardMultipler.sub(1)));
             bObject.amount=bObject.amount.mul(rewardMultipler); // return 3 times
             dContract.updateBetArrayIndex(bObject,index);
         }else{
             bObject.status=2;
-            for(uint256 i=0;i<dContract.getUserStakedAddress().length;i++){
-                uint256 updateAmount=dContract.getTokensStaked(dContract.getUserStakedAddress()[i]).add((((dContract.getTokensStaked(dContract.getUserStakedAddress()[i]).mul(10**4)).div(dContract.getTokenStakedAmount()).mul(dContract.getBetArray()[index].amount)).div(10**4)));
-                dContract.updateTokensStaked(dContract.getUserStakedAddress()[i],updateAmount);
-            }
-            dContract.updateTokenStakedAmount(dContract.getTokenStakedAmount().add(dContract.getBetArray()[index].amount));
+            stakeOffset=stakeOffset.add(bObject.amount);
             bObject.amount=0;
             dContract.updateBetArrayIndex(bObject,index);
         }
@@ -242,22 +242,14 @@ contract XIVBettingFixed is Ownable{
         XIVDatabaseLib.BetInfo memory bObject=dContract.getBetArray()[index];
         if(isWon){
             bObject.status=1;
-            uint256 rewardAmount=(uint256(dContract.getBetArray()[index].rewardFactor).mul(dContract.getBetArray()[index].amount)).div(10**4);
-            for(uint256 i=0;i<dContract.getUserStakedAddress().length;i++){
-                uint256 updatedAmount=dContract.getTokensStaked(dContract.getUserStakedAddress()[i]).sub((((dContract.getTokensStaked(dContract.getUserStakedAddress()[i]).mul(10**4)).div(dContract.getTokenStakedAmount()).mul(rewardAmount)).div(10**4)));
-                dContract.updateTokensStaked(dContract.getUserStakedAddress()[i],updatedAmount);
-            }
-            dContract.updateTokenStakedAmount(dContract.getTokenStakedAmount().sub(rewardAmount));
+            uint256 rewardAmount=(uint256(bObject.rewardFactor).mul(bObject.amount)).div(10**4);
+            stakeOffset=stakeOffset.sub(rewardAmount);
             bObject.amount=bObject.amount.add(rewardAmount);
             dContract.updateBetArrayIndex(bObject,index);
         }else{
             bObject.status=2;
-            uint256 riskAmount=(uint256(dContract.getBetArray()[index].riskFactor).mul(dContract.getBetArray()[index].amount)).div(10**4);
-            for(uint256 i=0;i<dContract.getUserStakedAddress().length;i++){
-                uint256 updatedAmount=dContract.getTokensStaked(dContract.getUserStakedAddress()[i]).add((((dContract.getTokensStaked(dContract.getUserStakedAddress()[i]).mul(10**4)).div(dContract.getTokenStakedAmount()).mul(riskAmount)).div(10**4)));
-                dContract.updateTokensStaked(dContract.getUserStakedAddress()[i],updatedAmount);
-            }
-            dContract.updateTokenStakedAmount(dContract.getTokenStakedAmount().sub(riskAmount));
+            uint256 riskAmount=(uint256(bObject.riskFactor).mul(bObject.amount)).div(10**4);
+            stakeOffset=stakeOffset.add(riskAmount);
             bObject.amount=bObject.amount.sub(riskAmount);
             dContract.updateBetArrayIndex(bObject,index);
         }
@@ -286,8 +278,9 @@ contract XIVBettingFixed is Ownable{
         uint256 totalMarketcap=getCalculateIndexValueForFixed(index);
         XIVDatabaseLib.BetInfo memory bObject=dContract.getBetArray()[index];
         if(dContract.getBetPriceHistoryFixedMapping(bObject.id).actualIndexValue>totalMarketcap){
-             uint16 percentageValue=uint16(((dContract.getBetPriceHistoryFixedMapping(bObject.id).actualIndexValue.sub(totalMarketcap)
-                                                     .mul(10**4)).div(dContract.getBetPriceHistoryFixedMapping(bObject.id).actualIndexValue)));
+             uint16 percentageValue=uint16(((dContract.getBetPriceHistoryFixedMapping(bObject.id).actualIndexValue
+                                                .sub(totalMarketcap)
+                                                .mul(10**4)).div(dContract.getBetPriceHistoryFixedMapping(bObject.id).actualIndexValue)));
             if(percentageValue>=bObject.checkpointPercent){
                 updateXIVForStakersFixed(index, true,2);
             }else{
