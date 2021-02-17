@@ -59,6 +59,9 @@ contract XIVDatabase is Ownable{
     
     mapping(uint256=>uint256) public plentyPercentage; // key is day and value is percentage in 10**2
     
+    uint256 rewardGeneratedAmount;
+    address[] userAddressUsedForBetting;
+    
     constructor(){
         addUpdateForDefiCoinFixed(0xC4b3bB3a5e75958F5b7B0C518093F84B878C17e3,"TRB",2,true);
         addUpdateForDefiCoinFixed(0x3A435D2aeF6b369762A64C42f8fbD65d5F5e61fa,"LINK",1,true);
@@ -432,6 +435,19 @@ contract XIVDatabase is Ownable{
     }
     function updateBetAddressesArray(address userAddress, uint256 _betId) external onlyMyContracts{
         betAddressesArray[userAddress].push(_betId);
+    }
+    function getRewardGeneratedAmount() external view returns(uint256){
+        return rewardGeneratedAmount;
+    }
+    function updateRewardGeneratedAmount(uint256 _rewardGeneratedAmount) external onlyMyContracts{
+        rewardGeneratedAmount=_rewardGeneratedAmount;
+    }
+    
+    function addUserAddressUsedForBetting(address userAddress) external onlyMyContracts{
+        userAddressUsedForBetting.push(userAddress);
+    }
+    function getUserAddressUsedForBetting() external view returns(address[] memory){
+        return userAddressUsedForBetting;
     }
     modifier onlyMyContracts() {
         require(msg.sender == XIVMainContractAddress || msg.sender==XIVBettingFixedContractAddress || msg.sender== XIVBettingFlexibleContractAddress);

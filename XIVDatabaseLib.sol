@@ -32,7 +32,7 @@ library XIVDatabaseLib{
         uint256 amount;
         address userAddress;
         address contractAddress;
-        uint256 betType;
+        uint256 betType; //
         uint256 currentPrice;
         uint256 timestamp;
         uint16 checkpointPercent;

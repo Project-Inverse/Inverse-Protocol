@@ -10,7 +10,7 @@ contract XIVBettingFixed is Ownable{
     
     using SafeMath for uint256;
     uint256 secondsInADay=86400;
-    uint256 sevenDays= 1 days;
+    uint256 sevenDays= 7 days;
     // uint256 sevenDays= 300;
     uint256 stakeOffset;
     address public databaseContractAddress=0x752e144BF110207d925691F78a84b07437ff5544;
@@ -42,6 +42,9 @@ contract XIVBettingFixed is Ownable{
             });
             dContract.updateBetArray(binfo);
             dContract.updateFindBetInArrayUsingBetIdMapping(dContract.getBetId(),dContract.getBetArray().length.sub(1));
+            if(dContract.getBetsAccordingToUserAddress(msg.sender).length==0){
+                dContract.addUserAddressUsedForBetting(msg.sender);
+            }
             dContract.updateBetAddressesArray(msg.sender,dContract.getBetId());
             dContract.updateBetId(dContract.getBetId().add(1));
         }else if(typeOfBet==2){
@@ -62,8 +65,12 @@ contract XIVBettingFixed is Ownable{
             });
             dContract.updateBetArray(binfo);
             dContract.updateFindBetInArrayUsingBetIdMapping(dContract.getBetId(),dContract.getBetArray().length.sub(1));
+            if(dContract.getBetsAccordingToUserAddress(msg.sender).length==0){
+                dContract.addUserAddressUsedForBetting(msg.sender);
+            }
             dContract.updateBetAddressesArray(msg.sender,dContract.getBetId());
             dContract.updateBetId(dContract.getBetId().add(1));
+            
            
         }
         dContract.transferFromTokens(dContract.getXIVTokenContractAddress(),msg.sender,databaseContractAddress,amountOfXIV);
@@ -227,7 +234,9 @@ contract XIVBettingFixed is Ownable{
         XIVDatabaseLib.BetInfo memory bObject=dContract.getBetArray()[index];
         if(isWon){
             bObject.status=1;
-            stakeOffset=stakeOffset.sub((bObject.amount).mul(rewardMultipler.sub(1)));
+            uint256 rewardAmount=(bObject.amount).mul(rewardMultipler.sub(1));
+            dContract.updateRewardGeneratedAmount(dContract.getRewardGeneratedAmount().add(rewardAmount));
+            stakeOffset=stakeOffset.sub(rewardAmount);
             bObject.amount=bObject.amount.mul(rewardMultipler); // return 3 times
             dContract.updateBetArrayIndex(bObject,index);
         }else{
@@ -243,6 +252,7 @@ contract XIVBettingFixed is Ownable{
         if(isWon){
             bObject.status=1;
             uint256 rewardAmount=(uint256(bObject.rewardFactor).mul(bObject.amount)).div(10**4);
+            dContract.updateRewardGeneratedAmount(dContract.getRewardGeneratedAmount().add(rewardAmount));
             stakeOffset=stakeOffset.sub(rewardAmount);
             bObject.amount=bObject.amount.add(rewardAmount);
             dContract.updateBetArrayIndex(bObject,index);

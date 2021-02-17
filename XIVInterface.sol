@@ -81,4 +81,8 @@ interface DatabaseContract{
     function getAdminStakingFee() external view returns(uint256);
     function getBetsAccordingToUserAddress(address userAddress) external view returns(uint256[] memory);
     function updateBetAddressesArray(address userAddress, uint256 _betId) external;
+    function getRewardGeneratedAmount() external view returns(uint256);
+    function updateRewardGeneratedAmount(uint256 _rewardGeneratedAmount) external;
+    function addUserAddressUsedForBetting(address userAddress) external;
+    function getUserAddressUsedForBetting() external view returns(address[] memory);
 }

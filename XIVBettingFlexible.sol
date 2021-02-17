@@ -38,6 +38,9 @@ contract XIVBettingFlexible is Ownable{
             });
             dContract.updateBetArray(binfo);
             dContract.updateFindBetInArrayUsingBetIdMapping(dContract.getBetId(),dContract.getBetArray().length.sub(1));
+            if(dContract.getBetsAccordingToUserAddress(msg.sender).length==0){
+                dContract.addUserAddressUsedForBetting(msg.sender);
+            }
             dContract.updateBetAddressesArray(msg.sender,dContract.getBetId());
             dContract.updateBetId(dContract.getBetId().add(1));
         }else if(typeOfBet==3){
@@ -58,6 +61,9 @@ contract XIVBettingFlexible is Ownable{
             });
             dContract.updateBetArray(binfo);
             dContract.updateFindBetInArrayUsingBetIdMapping(dContract.getBetId(),dContract.getBetArray().length.sub(1));
+            if(dContract.getBetsAccordingToUserAddress(msg.sender).length==0){
+                dContract.addUserAddressUsedForBetting(msg.sender);
+            }
             dContract.updateBetAddressesArray(msg.sender,dContract.getBetId());
             dContract.updateBetId(dContract.getBetId().add(1));
         }
