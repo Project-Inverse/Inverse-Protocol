@@ -22,7 +22,7 @@ contract XIVDatabase is Ownable{
     address XIVBettingFixedContractAddress;
     address XIVBettingFlexibleContractAddress;
     
-    address oracleWrapperContractAddress = 0x727D4c4401aC0a4F430cc7e9B743B7970e1929b9; //address of oracle wrapper from where the prices would be fetched
+    address oracleWrapperContractAddress = 0xF6E966922a8CC312c80698340fEd9ac1ddf2b711; //address of oracle wrapper from where the prices would be fetched
     address XIVTokenContractAddress = 0x7a8D6925cb8faB279883ac3DBccf6f2029eB1315; //XIV contract address
     address USDTContractAddress = 0xBbf126a88DE8c993BFe67c46Bb333a2eC71bC3fF; //USDT contract address
     
@@ -61,34 +61,6 @@ contract XIVDatabase is Ownable{
     
     uint256 rewardGeneratedAmount;
     address[] userAddressUsedForBetting;
-    
-    constructor(){
-        addUpdateForDefiCoinFixed(0xC4b3bB3a5e75958F5b7B0C518093F84B878C17e3,"TRB",2,true);
-        addUpdateForDefiCoinFixed(0x3A435D2aeF6b369762A64C42f8fbD65d5F5e61fa,"LINK",1,true);
-        addUpdateForDefiCoinFixed(0xBbf126a88DE8c993BFe67c46Bb333a2eC71bC3fF,"USDC",1,true);
-        addUpdateForDefiCoinFlexible(0xC4b3bB3a5e75958F5b7B0C518093F84B878C17e3,"TRB",2,true);
-        addUpdateForDefiCoinFlexible(0x3A435D2aeF6b369762A64C42f8fbD65d5F5e61fa,"LINK",1,true);
-        addUpdateForDefiCoinFlexible(0xBbf126a88DE8c993BFe67c46Bb333a2eC71bC3fF,"USDC",1,true);
-        addflexibleDefiCoinArray(900,1000,1000);
-        addflexibleDefiCoinArray(1000,2000,2000);
-        addflexibleDefiCoinArray(1200,4000,4000);
-        addflexibleDefiCoinArray(1400,7000,7000);
-        addflexibleDefiCoinArray(1500,10000,10000);
-        
-        addflexibleIndexCoinArray(900,1000,1000);
-        addflexibleIndexCoinArray(1000,2000,2000);
-        addflexibleIndexCoinArray(1200,4000,4000);
-        addflexibleIndexCoinArray(1400,7000,7000);
-        addflexibleIndexCoinArray(1500,10000,10000);
-        addUpdatePlentyPercentage(0,10000);
-        addUpdatePlentyPercentage(1,5000);
-        addUpdatePlentyPercentage(2,5000);
-        addUpdatePlentyPercentage(3,6000);
-        addUpdatePlentyPercentage(4,7000);
-        addUpdatePlentyPercentage(5,8000);
-        addUpdatePlentyPercentage(6,9000);
-        addUpdatePlentyPercentage(7,10000);
-    }
     
     function addUpdateForDefiCoinFixed(address _ContractAddress, string memory _currencySymbol, 
                                         uint16 _OracleType,bool _Status) public onlyOwner{

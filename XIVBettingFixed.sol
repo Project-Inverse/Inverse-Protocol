@@ -13,7 +13,7 @@ contract XIVBettingFixed is Ownable{
     uint256 sevenDays= 7 days;
     // uint256 sevenDays= 300;
     uint256 stakeOffset;
-    address public databaseContractAddress=0x752e144BF110207d925691F78a84b07437ff5544;
+    address public databaseContractAddress=0x80c356bdca03175171fFBcbc18971b67F243BCf4;
     
     XIVDatabaseLib.IndexCoin[] tempObjectArray;
     

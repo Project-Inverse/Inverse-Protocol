@@ -9,7 +9,7 @@ import "./XIVInterface.sol";
 contract XIVBettingFlexible is Ownable{
     
     using SafeMath for uint256;
-    address public databaseContractAddress=0x752e144BF110207d925691F78a84b07437ff5544;
+    address public databaseContractAddress=0x80c356bdca03175171fFBcbc18971b67F243BCf4;
     
     XIVDatabaseLib.IndexCoin[] tempObjectArray;
     
